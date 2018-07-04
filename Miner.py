@@ -1,5 +1,6 @@
 from datetime import datetime
 from datetime import timedelta
+from copy import deepcopy
     
 class Miner:
     __dailyGhsRevenue = 0.9/1000 # $0.9 per 1000GHS per day

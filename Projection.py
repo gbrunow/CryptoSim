@@ -1,6 +1,7 @@
 from Miner import Miner
 from datetime import datetime
 from datetime import timedelta
+from copy import deepcopy
 import numpy as np
 
 class Projection:
@@ -28,12 +29,24 @@ class Projection:
             self.project()
     
     def clone(self, isReferral=False):
-        projection = Projection(self.startDate, self.days)
-        for miner in self.miners:
-            projection.miners.append(miner.clone(isReferral))
-            projection.project()
+        # projection = Projection(self.startDate, self.days)
+        # for miner in self.miners:
+        #     projection.miners.append(miner.clone(isReferral))
+        
+        # projection.project()
 
-        return projection
+        # return projection
+
+        clone = deepcopy(self)
+
+        if isReferral:
+            clone.miners = []
+            for miner in self.miners:
+                clone.miners.append(miner.clone(isReferral))
+        
+        clone.project()
+
+        return clone
 
     def project(self):
         self.minerProjections = []

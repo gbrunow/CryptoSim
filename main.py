@@ -1,10 +1,12 @@
+import numpy as np
+import pickle
 from Investment import Investment
 from Miner import Miner
 from Projection import Projection
 from Reinvestment import Reinvestment
 from datetime import datetime
 
-def printProjection(projection, referralProjection, totalInvested):
+def printProjection(projection, referralProjection, totalInvested, minimumBuy="No buy"):
     days = (projection.endDate - datetime.now()).days        
 
     revenue = projection.getAccRevenue()[-1]
@@ -14,9 +16,9 @@ def printProjection(projection, referralProjection, totalInvested):
     profit = (refProfit+revenue) - totalInvested
     profitPercent = 100*profit/totalInvested
 
-    print "{end} ({days:3} days)   ${revenue:.2f}    ${refProfit:.2f}       ${totalRevenue:.2f}     ${profit:.2f}       {profitPercent:.2f}%".format(
+    print "{end} ({days:3} days)   ${revenue:.2f}    ${refProfit:.2f}       ${totalRevenue:.2f}     ${profit:.2f}       {profitPercent:.2f}%        {minimumBuy}".format(
         end=projection.endDate, days=days, revenue=revenue, totalRevenue=totalRevenue, profit=profit, profitPercent=profitPercent, 
-        refProfit=refProfit
+        refProfit=refProfit, minimumBuy=minimumBuy
     )
 
     # for miner in projection.miners:
@@ -49,24 +51,50 @@ miners = [
     Miner(hashRate=1300, startDate='6/13/2018', days=90),
     Miner(hashRate=1070, startDate='6/14/2018', days=90),
     Miner(hashRate=3000, startDate='6/17/2018', days=90),
+    Miner(hashRate=4800, startDate='6/27/2018', days=90),
+    Miner(hashRate=6500, startDate='7/3/2018', days=90),
 ]
 
-print "End Date                         Main        Referral       Total       Profit           %"
+print "End Date                         Main        Referral       Total       Profit           %       Min Buy (GHS)"
 projection = Projection(startDate=miners[-1].startDate, miners=miners)
 referralProjection = projection.clone(True)
 
 printProjection(projection, referralProjection, totalInvested)
 
-reinvestiment = Reinvestment(
-    projection=projection, 
-    days=15,
-    minWait=1,
-    minBuy=3.3,
-    startDate=miners[-1].startDate, 
-    includeReferralBonus=includeReferralBonus
-)
+bestProfit = 0
+for minGHS in np.arange(3, 7.5, 0.05):
+    clone = projection.clone()
+    reinvestiment = Reinvestment(
+        projection=clone, 
+        days=30,
+        minWait=1,
+        minBuy=minGHS,
+        startDate=miners[-1].startDate, 
+        includeReferralBonus=includeReferralBonus
+    )
 
-printProjection(reinvestiment.projection, reinvestiment.referralProjection, totalInvested)
+    revenue = clone.getAccRevenue()[-1]
+    refProfit = clone.clone(True).getAccRevenue()[-1]
+    totalRevenue = revenue + refProfit
+
+    profit = (refProfit+revenue) - totalInvested
+    profitPercent = 100*profit/totalInvested
+
+    if profitPercent >= bestProfit:
+        printProjection(reinvestiment.projection, reinvestiment.referralProjection, totalInvested, minGHS)
+        bestProfit = profitPercent
+
+
+# reinvestiment = Reinvestment(
+#     projection=projection, 
+#     days=90,
+#     minWait=1,
+#     minBuy=1,
+#     startDate=miners[-1].startDate, 
+#     includeReferralBonus=includeReferralBonus
+# )
+
+# printProjection(reinvestiment.projection, reinvestiment.referralProjection, totalInvested)
 
 # reinvestiment = Reinvestment(
 #     projection=projection, 
