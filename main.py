@@ -19,7 +19,7 @@ def printProjection(projection, referralProjection, totalInvested, minimumBuy="N
     print "{end} ({days:3} days)   ${revenue:.2f}    ${refProfit:.2f}       ${totalRevenue:.2f}     ${profit:.2f}       {profitPercent:.2f}%        {minimumBuy}".format(
         end=projection.endDate, days=days, revenue=revenue, totalRevenue=totalRevenue, profit=profit, profitPercent=profitPercent, 
         refProfit=refProfit, minimumBuy=minimumBuy
-    )
+    ),
 
     # for miner in projection.miners:
     #     print "{hash}GHS    ${revenue:.2f}/day   {start} - {end}".format(
@@ -53,6 +53,8 @@ miners = [
     Miner(hashRate=3000, startDate='6/17/2018', days=90),
     Miner(hashRate=4800, startDate='6/27/2018', days=90),
     Miner(hashRate=6500, startDate='7/3/2018', days=90),
+    Miner(hashRate=3700, startDate='7/7/2018', days=90),
+    Miner(hashRate=11950, startDate='7/9/2018', days=90)
 ]
 
 print "End Date                         Main        Referral       Total       Profit           %       Min Buy (GHS)"
@@ -62,27 +64,36 @@ referralProjection = projection.clone(True)
 printProjection(projection, referralProjection, totalInvested)
 
 bestProfit = 0
-for minGHS in np.arange(3, 7.5, 0.05):
-    clone = projection.clone()
-    reinvestiment = Reinvestment(
-        projection=clone, 
-        days=30,
-        minWait=1,
-        minBuy=minGHS,
-        startDate=miners[-1].startDate, 
-        includeReferralBonus=includeReferralBonus
-    )
+best = None
+for i in range(10):
+    print "\n============= week " + str(i) + " =============" 
+    for minGHS in np.arange(1, 7.5, 0.05):
+        clone = projection.clone()
+        reinvestiment = Reinvestment(
+            projection=clone, 
+            days=7*(i+1),
+            minWait=0,
+            minBuy=minGHS,
+            startDate=miners[-1].startDate, 
+            includeReferralBonus=includeReferralBonus
+        )
 
-    revenue = clone.getAccRevenue()[-1]
-    refProfit = clone.clone(True).getAccRevenue()[-1]
-    totalRevenue = revenue + refProfit
+        revenue = clone.getAccRevenue()[-1]
+        refProfit = clone.clone(True).getAccRevenue()[-1]
+        totalRevenue = revenue + refProfit
 
-    profit = (refProfit+revenue) - totalInvested
-    profitPercent = 100*profit/totalInvested
+        profit = (refProfit+revenue) - totalInvested
+        profitPercent = 100*profit/totalInvested
 
-    if profitPercent >= bestProfit:
-        printProjection(reinvestiment.projection, reinvestiment.referralProjection, totalInvested, minGHS)
-        bestProfit = profitPercent
+        if profitPercent >= bestProfit:
+            if profitPercent > bestProfit:
+                print ""
+                printProjection(reinvestiment.projection, reinvestiment.referralProjection, totalInvested, minGHS)
+                best = clone
+            else:
+                print str(minGHS),
+            bestProfit = profitPercent
+    projection = best
 
 
 # reinvestiment = Reinvestment(
